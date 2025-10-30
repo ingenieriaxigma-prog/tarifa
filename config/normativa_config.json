@@ -1,0 +1,23 @@
+{
+  "normativa": {
+    "version": "CREG 101-072/2025",
+    "fecha_publicacion": "2025-04-06"
+  },
+  "componente_G": {
+    "metodo": "promedio_ponderado",
+    "modo_GDC": {
+      "habilitado": true,
+      "metodo_tranferencia": "promedio_contratos",
+      "max_potencia_kW": 5000
+    }
+  },
+  "componente_T": {
+    "metodo": "valor_fijo",
+    "valor_fijo_transmision": 19.66
+  },
+  "componente_D": {
+  "metodo": "estrato_zona",
+  "ajuste_rural": 0.9
+  }
+}
+
