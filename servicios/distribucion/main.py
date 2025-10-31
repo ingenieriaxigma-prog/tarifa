@@ -1,9 +1,15 @@
 from fastapi import FastAPI
-from servicios.distribucion.logica import calcular_distribucion
-from servicios.distribucion.modelo import DatosDistribucion
 
-app = FastAPI()
+app = FastAPI(title="Servicio de Distribución", version="1.0")
 
-@app.post("/calcular/distribucion")
-def calcular(datos: DatosDistribucion):
-    return {"componente_D": calcular_distribucion(datos)}
+@app.get("/")
+def root():
+    return {"message": "Servicio de Distribución activo"}
+
+@app.get("/valor")
+def obtener_valor_distribucion():
+    """
+    Simula el valor asociado al componente de distribución.
+    En el futuro aquí puedes conectar con la base de datos o lógica real.
+    """
+    return {"valor": 63.8}

@@ -1,0 +1,89 @@
+version: '3.9'
+
+services:
+  base:
+    build:
+      context: .
+      dockerfile: base/Dockerfile.base
+    image: tarifa-electrica-base
+
+  generacion:
+    build:
+      context: .
+      dockerfile: servicios/generacion/Dockerfile
+    container_name: tarifa-electrica-generacion
+    depends_on:
+      - base
+    ports:
+      - "8001:8001"
+
+  transmision:
+    build:
+      context: .
+      dockerfile: servicios/transmision/Dockerfile
+    container_name: tarifa-electrica-transmision
+    depends_on:
+      - base
+    ports:
+      - "8002:8002"
+
+  distribucion:
+    build:
+      context: .
+      dockerfile: servicios/distribucion/Dockerfile
+    container_name: tarifa-electrica-distribucion
+    depends_on:
+      - base
+    ports:
+      - "8003:8003"
+
+  perdidas_reconocidas:
+    build:
+      context: .
+      dockerfile: servicios/perdidas_reconocidas/Dockerfile
+    container_name: tarifa-electrica-perdidas_reconocidas
+    depends_on:
+      - base
+    ports:
+      - "8004:8004"
+
+  restricciones:
+    build:
+      context: .
+      dockerfile: servicios/restricciones/Dockerfile
+    container_name: tarifa-electrica-restricciones
+    depends_on:
+      - base
+    ports:
+      - "8005:8005"
+
+  comercializacion:
+    build:
+      context: .
+      dockerfile: servicios/comercializacion/Dockerfile
+    container_name: tarifa-electrica-comercializacion
+    depends_on:
+      - base
+    ports:
+      - "8006:8006"
+
+  tarifa_total:
+    build:
+      context: .
+      dockerfile: servicios/tarifa_total/Dockerfile
+    container_name: tarifa-electrica-tarifa_total
+    depends_on:
+      - generacion
+      - transmision
+      - distribucion
+      - perdidas_reconocidas
+      - restricciones
+      - comercializacion
+    ports:
+      - "8007:8007"
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge

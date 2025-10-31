@@ -1,10 +1,12 @@
 from fastapi import FastAPI
-from servicios.generacion.modelo import ListaCompras
-from servicios.generacion.logica import calcular_componente_G
 
-app = FastAPI(title="Microservicio: Componente G")
+app = FastAPI(title="Servicio de Generación", version="1.0")
 
-@app.post("/calcular/generacion")
-def calcular_generacion(data: ListaCompras):
-    G = calcular_componente_G(data.compras)
-    return {"componente_G": G}
+@app.get("/")
+def root():
+    return {"message": "Servicio de Generación activo"}
+
+@app.get("/valor")
+def obtener_valor_generacion():
+    # Aquí podrías tener una lógica real de cálculo
+    return {"valor": 120.5}

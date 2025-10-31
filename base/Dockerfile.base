@@ -1,0 +1,11 @@
+# Imagen base común para todos los microservicios
+FROM python:3.11-slim
+
+# Directorio de trabajo
+WORKDIR /app
+
+# Copia el núcleo compartido
+COPY ./core /app/core
+
+# Instala dependencias comunes
+RUN pip install --no-cache-dir fastapi uvicorn httpx pydantic
