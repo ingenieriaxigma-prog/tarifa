@@ -1,36 +1,52 @@
-import httpx
-from servicios.tarifa_total.modelo import DatosEntrada, ResultadoTarifa
+import logging
+import asyncio
+from typing import Dict
+from core.utils import redondear, respuesta_estandar
+from clients import obtener_componentes_en_paralelo
+
+logger = logging.getLogger(__name__)
+
+async def calcular_tarifa_total_automatica(consumo_kWh: float) -> Dict:
+    """
+    Calcula la tarifa total consultando microservicios en paralelo,
+    con reintentos automáticos y tolerancia a fallos.
+    """
+    try:
+        logger.info("🚀 Iniciando cálculo automático (modo producción)...")
+
+        componentes = await obtener_componentes_en_paralelo()
+        total_tarifa = sum(componentes.values())
+        total_costo = redondear(total_tarifa * consumo_kWh, 2)
+
+        logger.info(f"💰 Tarifa total = {total_tarifa} | Costo = {total_costo}")
+
+        return respuesta_estandar(True, "Cálculo exitoso (producción)", {
+            "componentes": componentes,
+            "tarifa_total_$por_kWh": redondear(total_tarifa, 2),
+            "consumo_kWh": consumo_kWh,
+            "costo_total_$": total_costo
+        })
+    except Exception as e:
+        logger.exception("Error crítico en cálculo automático:")
+        return respuesta_estandar(False, f"Error interno: {str(e)}", {})
 
 
-# URLs locales de los microservicios
-SERVICIOS = {
-    "generacion": "http://localhost:8001/calcular",
-    "transmision": "http://localhost:8002/calcular",
-    "distribucion": "http://localhost:8003/calcular",
-    "perdidas_reconocidas": "http://localhost:8004/calcular",
-    "restricciones": "http://localhost:8005/calcular",
-    "comercializacion": "http://localhost:8006/calcular"
-}
+def calcular_tarifa_total(componentes: Dict[str, float], consumo_kWh: float) -> Dict:
+    """
+    Modo manual — versión estable con logs.
+    """
+    try:
+        total_tarifa = sum(componentes.values())
+        total_costo = redondear(total_tarifa * consumo_kWh, 2)
+        logger.info(f"🧮 Cálculo manual: {componentes} → total {total_tarifa}")
 
-async def calcular_tarifa_total(datos: DatosEntrada) -> ResultadoTarifa:
-    resultados = {}
-    total = 0.0
-
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        for nombre, url in SERVICIOS.items():
-            try:
-                respuesta = await client.post(url, json=datos.dict())
-                respuesta.raise_for_status()
-                data = respuesta.json()
-                valor = data.get("valor") or data.get("valor_cop") or 0.0
-                resultados[nombre] = round(valor, 2)
-                total += valor
-            except httpx.RequestError as e:
-                resultados[nombre] = f"Error conexión: {e}"
-            except httpx.HTTPStatusError as e:
-                resultados[nombre] = f"Error respuesta: {e.response.status_code}"
-
-    return ResultadoTarifa(
-        componentes=resultados,
-        tarifa_total=round(total, 2)
-    )
+        return respuesta_estandar(True, "Cálculo manual exitoso", {
+            "metodo": "suma_directa",
+            "componentes": componentes,
+            "tarifa_total_$por_kWh": redondear(total_tarifa, 2),
+            "consumo_kWh": consumo_kWh,
+            "costo_total_$": total_costo
+        })
+    except Exception as e:
+        logger.exception("Error en cálculo manual:")
+        return respuesta_estandar(False, f"Error: {str(e)}", {})

@@ -1,14 +1,39 @@
-from fastapi import FastAPI
+import logging
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List
+from logica import calcular_componente_R
 
-app = FastAPI(title="Servicio de Restricciones", version="1.0")
+# Configuración de logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(
+    title="Microservicio Restricciones",
+    description="Calcula el componente R (Restricciones) de la tarifa eléctrica",
+    version="1.0.0"
+)
+
+# Modelo de entrada
+class EventoRestriccion(BaseModel):
+    energia_afectada_kWh: float
+    costo_unitario_kWh: float
+
 
 @app.get("/")
 def root():
-    return {"message": "Servicio de Restricciones activo"}
+    return {"mensaje": "Microservicio de Restricciones activo"}
 
-@app.get("/valor")
-def obtener_valor_restricciones():
+
+@app.post("/restricciones/calcular")
+def calcular_restricciones(eventos: List[EventoRestriccion]):
     """
-    Valor de los costos de restricciones operativas del sistema.
+    Calcula el componente R (Restricciones) a partir de los eventos registrados.
     """
-    return {"valor": 12.9}
+    try:
+        data = [e.dict() for e in eventos]
+        resultado = calcular_componente_R(data)
+        return resultado
+    except Exception as e:
+        logger.error(f"Error en cálculo de restricciones: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

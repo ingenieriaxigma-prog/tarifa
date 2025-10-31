@@ -1,77 +1,66 @@
-version: '3.9'
+version: "3.9"
 
 services:
-  base:
-    build:
-      context: .
-      dockerfile: base/Dockerfile.base
-    image: tarifa-electrica-base
-
   generacion:
     build:
       context: .
-      dockerfile: servicios/generacion/Dockerfile
-    container_name: tarifa-electrica-generacion
-    depends_on:
-      - base
+      dockerfile: ./servicios/generacion/Dockerfile
     ports:
       - "8001:8001"
+    networks:
+      - microservicios
 
   transmision:
     build:
       context: .
-      dockerfile: servicios/transmision/Dockerfile
-    container_name: tarifa-electrica-transmision
-    depends_on:
-      - base
+      dockerfile: ./servicios/transmision/Dockerfile
     ports:
       - "8002:8002"
+    networks:
+      - microservicios
 
   distribucion:
     build:
       context: .
-      dockerfile: servicios/distribucion/Dockerfile
-    container_name: tarifa-electrica-distribucion
-    depends_on:
-      - base
+      dockerfile: ./servicios/distribucion/Dockerfile
     ports:
       - "8003:8003"
+    networks:
+      - microservicios
 
   perdidas_reconocidas:
     build:
       context: .
-      dockerfile: servicios/perdidas_reconocidas/Dockerfile
-    container_name: tarifa-electrica-perdidas_reconocidas
-    depends_on:
-      - base
+      dockerfile: ./servicios/perdidas_reconocidas/Dockerfile
     ports:
       - "8004:8004"
+    networks:
+      - microservicios
 
   restricciones:
     build:
       context: .
-      dockerfile: servicios/restricciones/Dockerfile
-    container_name: tarifa-electrica-restricciones
-    depends_on:
-      - base
+      dockerfile: ./servicios/restricciones/Dockerfile
     ports:
       - "8005:8005"
+    networks:
+      - microservicios
 
   comercializacion:
     build:
       context: .
-      dockerfile: servicios/comercializacion/Dockerfile
-    container_name: tarifa-electrica-comercializacion
-    depends_on:
-      - base
+      dockerfile: ./servicios/comercializacion/Dockerfile
     ports:
       - "8006:8006"
+    networks:
+      - microservicios
 
   tarifa_total:
     build:
       context: .
-      dockerfile: servicios/tarifa_total/Dockerfile
-    container_name: tarifa-electrica-tarifa_total
+      dockerfile: ./servicios/tarifa_total/Dockerfile
+    ports:
+      - "8007:8007"
     depends_on:
       - generacion
       - transmision
@@ -79,11 +68,9 @@ services:
       - perdidas_reconocidas
       - restricciones
       - comercializacion
-    ports:
-      - "8007:8007"
     networks:
-      - default
+      - microservicios
 
 networks:
-  default:
+  microservicios:
     driver: bridge

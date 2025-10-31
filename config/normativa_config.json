@@ -1,23 +1,30 @@
 {
-  "normativa": {
-    "version": "CREG 101-072/2025",
-    "fecha_publicacion": "2025-04-06"
-  },
-  "componente_G": {
-    "metodo": "promedio_ponderado",
-    "modo_GDC": {
-      "habilitado": true,
-      "metodo_tranferencia": "promedio_contratos",
-      "max_potencia_kW": 5000
+    "anio": 2025,
+    "tarifas": {
+        "generacion": {
+            "valor_kWh": 320.5,
+            "descripcion": "Costo unitario promedio por generación eléctrica"
+        },
+        "transmision": {
+            "valor_kWh": 35.1,
+            "descripcion": "Costo unitario por transporte de energía"
+        },
+        "distribucion": {
+            "valor_kWh": 40.2,
+            "descripcion": "Costo por distribución hasta el usuario final"
+        },
+        "perdidas_reconocidas": {
+            "valor_kWh": 10.8,
+            "descripcion": "Costo por pérdidas técnicas reconocidas"
+        },
+        "restricciones": {
+            "valor_kWh": 5.7,
+            "descripcion": "Costo por restricciones en el sistema"
+        },
+        "comercializacion": {
+            "valor_kWh": 22.5,
+            "descripcion": "Costo por servicios comerciales del operador"
+        }
     }
-  },
-  "componente_T": {
-    "metodo": "valor_fijo",
-    "valor_fijo_transmision": 19.66
-  },
-  "componente_D": {
-  "metodo": "estrato_zona",
-  "ajuste_rural": 0.9
-  }
 }
 

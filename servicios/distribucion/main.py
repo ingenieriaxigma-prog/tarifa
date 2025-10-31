@@ -1,15 +1,40 @@
-from fastapi import FastAPI
+import logging
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List
+from logica import calcular_componente_D
 
-app = FastAPI(title="Servicio de Distribución", version="1.0")
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Inicializar aplicación FastAPI
+app = FastAPI(
+    title="Microservicio Distribución",
+    description="Calcula el componente D (Distribución) de la tarifa eléctrica",
+    version="1.0.0"
+)
+
+# Modelo de entrada
+class TramoDistribucion(BaseModel):
+    energia_kWh: float
+    costo_unitario_kWh: float
+
 
 @app.get("/")
 def root():
-    return {"message": "Servicio de Distribución activo"}
+    return {"mensaje": "Microservicio de Distribución activo"}
 
-@app.get("/valor")
-def obtener_valor_distribucion():
+
+@app.post("/distribucion/calcular")
+def calcular_distribucion(redes: List[TramoDistribucion]):
     """
-    Simula el valor asociado al componente de distribución.
-    En el futuro aquí puedes conectar con la base de datos o lógica real.
+    Calcula el componente D con base en los tramos de red.
     """
-    return {"valor": 63.8}
+    try:
+        data = [r.dict() for r in redes]
+        resultado = calcular_componente_D(data)
+        return resultado
+    except Exception as e:
+        logger.error(f"Error en cálculo de distribución: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

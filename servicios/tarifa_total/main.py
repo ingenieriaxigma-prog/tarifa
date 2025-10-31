@@ -1,47 +1,39 @@
-from fastapi import FastAPI
-import httpx
+import logging
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import asyncio
+from logica import calcular_tarifa_total, calcular_tarifa_total_automatica
 
-app = FastAPI(title="Tarifa Total Service", version="1.0")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Endpoints de los microservicios dentro de la red Docker Compose
-SERVICES = {
-    "generacion": "http://tarifa-electrica-generacion:8001/valor",
-    "transmision": "http://tarifa-electrica-transmision:8002/valor",
-    "distribucion": "http://tarifa-electrica-distribucion:8003/valor",
-    "perdidas_reconocidas": "http://tarifa-electrica-perdidas_reconocidas:8004/valor",
-    "restricciones": "http://tarifa-electrica-restricciones:8005/valor",
-    "comercializacion": "http://tarifa-electrica-comercializacion:8006/valor",
-}
+app = FastAPI(
+    title="Microservicio Tarifa Total (Async)",
+    description="Calcula la tarifa eléctrica total consultando microservicios en paralelo",
+    version="3.0.0"
+)
+
+class TarifaRequest(BaseModel):
+    componentes: dict
+    consumo_kWh: float
+
+class TarifaAutoRequest(BaseModel):
+    consumo_kWh: float
+
 
 @app.get("/")
 def root():
-    return {"message": "Servicio de Tarifa Total activo"}
+    return {"mensaje": "Microservicio Tarifa Total (Async) activo"}
 
-@app.get("/tarifa_total")
-async def calcular_tarifa_total():
-    resultados = {}
-    total = 0
 
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        for nombre, url in SERVICES.items():
-            try:
-                resp = await client.get(url)
-                resp.raise_for_status()
-                data = resp.json()
+@app.post("/tarifa/calcular")
+def calcular_manual(req: TarifaRequest):
+    return calcular_tarifa_total(req.componentes, req.consumo_kWh)
 
-                # Cada servicio debería devolver {"valor": X}
-                valor = data.get("valor", 0)
-                resultados[nombre] = {"estado": "ok", "valor": valor}
-                total += valor
 
-            except httpx.RequestError as e:
-                resultados[nombre] = {"estado": "error", "detalle": f"Conexión fallida: {e}"}
-            except httpx.HTTPStatusError as e:
-                resultados[nombre] = {"estado": "error", "detalle": f"HTTP {e.response.status_code}: {e.response.text}"}
-            except Exception as e:
-                resultados[nombre] = {"estado": "error", "detalle": str(e)}
-
-    return {
-        "detalle": resultados,
-        "tarifa_total": total
-    }
+@app.post("/tarifa/calcular/auto")
+async def calcular_automatico(req: TarifaAutoRequest):
+    try:
+        return await calcular_tarifa_total_automatica(req.consumo_kWh)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

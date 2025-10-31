@@ -1,11 +1,11 @@
-# Hereda de la imagen base
-FROM tarifa-electrica-base:latest
+FROM tarifa-electrica-base
 
-# Copia el servicio específico
+WORKDIR /app
+
+# Copia el código fuente del microservicio
 COPY ./servicios/generacion /app
 
-# Expone el puerto
 EXPOSE 8001
 
-# Comando para ejecutar el microservicio
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
+

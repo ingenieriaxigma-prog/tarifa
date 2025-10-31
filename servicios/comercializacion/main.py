@@ -1,14 +1,15 @@
 from fastapi import FastAPI
+from logica import calcular_comercializacion
 
-app = FastAPI(title="Servicio de Comercialización", version="1.0")
+app = FastAPI(title="Microservicio Comercialización")
 
 @app.get("/")
-def root():
-    return {"message": "Servicio de Comercialización activo"}
+async def root():
+    return {"mensaje": "Microservicio Comercialización activo"}
 
-@app.get("/valor")
-def obtener_valor_comercializacion():
-    """
-    Simula el componente de comercialización en la tarifa final.
-    """
-    return {"valor": 21.7}
+# 👇 Importante: la ruta completa debe coincidir con la usada en tarifa_total ("/comercializacion/calcular")
+@app.post("/comercializacion/calcular")
+async def calcular(payload: dict):
+    consumo_kWh = payload.get("consumo_kWh", 0)
+    resultado = await calcular_comercializacion(consumo_kWh)
+    return resultado
