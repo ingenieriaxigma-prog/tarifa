@@ -1,6 +1,5 @@
-# Sistema de Cálculo de Tarifa Eléctrica (Arquitectura General)
-
-> Proyecto desarrollado por **Fabian González** — Arquitectura modular basada en microservicios para el cálculo profesional de la tarifa eléctrica en Colombia, siguiendo modelos similares a los empleados por XM, Air-e y Enel.
+# ⚡ Sistema de Cálculo de Tarifa Eléctrica
+> Plataforma modular basada en microservicios FastAPI + Docker para la estimación profesional de tarifas eléctricas según normativa CREG.
 
 ---
 
@@ -13,6 +12,11 @@ Los componentes se comunican de forma **asíncrona vía HTTP interno**, y el ser
 ---
 
 ## Arquitectura del Sistema
+| Servicio     | Endpoint principal      | Puerto | Dependencias         |
+| ------------ | ----------------------- | ------ | -------------------- |
+| Generación   | `/generacion/calcular`  | 8001   | XM API               |
+| Transmisión  | `/transmision/calcular` | 8002   | CREG                 |
+| Tarifa Total | `/tarifa/calcular`      | 8000   | Todos los anteriores |
 
 ### 1. Componentes principales
 
@@ -79,6 +83,13 @@ Cada microservicio incluye su propio `main.py`, `logica.py`, `modelo.py` y `Dock
 * **Portabilidad:** 100% Docker; puede desplegarse localmente o en la nube (AWS ECS, GCP, etc.).
 
 ---
+## 📦 Instalación rápida
+
+```bash
+git clone https://github.com/usuario/tarifa-electrica.git
+cd tarifa-electrica
+pip install -r requirements.txt
+docker compose up --build
 
 ## 🧪 Ejemplo de uso local
 
@@ -158,6 +169,13 @@ curl -X POST http://localhost:8000/tarifa/calcular -H 'Content-Type: application
 
 ---
 
+```markdown
+📚 **Documentación complementaria**
+- [docs/README_G.md](docs/README_G.md) — Microservicio Generación  
+- [docs/README_T.md](docs/README_T.md) — Microservicio Transmisión  
+- [docs/README_TARIFA_TOTAL.md](docs/README_TARIFA_TOTAL.md) — Orquestador  
+- [docs/arquitectura_general.md](docs/arquitectura_general.md) — Arquitectura global  
+- [docs/roadmap_tecnico.md](docs/roadmap_tecnico.md) — Plan técnico
 ## 👨‍💻 Autor
 
 **MASA ING**
