@@ -1,4 +1,4 @@
-# README — Sistema de Cálculo de Tarifa Eléctrica (Arquitectura General)
+# Sistema de Cálculo de Tarifa Eléctrica (Arquitectura General)
 
 > Proyecto desarrollado por **Fabian González** — Arquitectura modular basada en microservicios para el cálculo profesional de la tarifa eléctrica en Colombia, siguiendo modelos similares a los empleados por XM, Air-e y Enel.
 
