@@ -1,89 +1,115 @@
 import logging
 import asyncio
-import httpx
 from typing import Dict
 from core.utils import redondear, respuesta_estandar
 from clients import obtener_componentes_en_paralelo
+import httpx
 
 logger = logging.getLogger(__name__)
 
-# 🌐 URL interna del microservicio de generación (Docker network)
-URL_GENERACION = "http://generacion:8001/generacion/precio-xm"
-
-
-# ============================================================
-# 🔹 Función auxiliar: obtener G (generación) desde XM vía microservicio
-# ============================================================
-async def obtener_valor_generacion_xm() -> float:
-    """
-    Consulta el valor de generación (G) desde el microservicio de generación.
-    Si XM falla o responde mal, devuelve None para permitir fallback.
-    """
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            logger.info(f"🌐 Consultando valor G desde {URL_GENERACION} ...")
-            resp = await client.get(URL_GENERACION)
-            resp.raise_for_status()
-            data = resp.json()
-            valor = data.get("valor_kWh")
-
-            if valor is None:
-                raise ValueError("El campo 'valor_kWh' no está presente en la respuesta")
-
-            logger.info(f"✅ Valor G obtenido desde XM: {valor}")
-            return float(valor)
-    except Exception as e:
-        logger.warning(f"⚠️ No se pudo obtener valor G desde XM: {e}")
-        return None
-
-
-# ============================================================
-# 🔹 Cálculo automático (usa XM en vivo para G)
-# ============================================================
+# ==========================================================
+# 🔹 CÁLCULO AUTOMÁTICO (PRODUCCIÓN)
+# ==========================================================
 async def calcular_tarifa_total_automatica(consumo_kWh: float) -> Dict:
     """
-    Calcula la tarifa total consultando microservicios en paralelo,
-    obteniendo G desde XM (si está disponible).
+    Calcula la tarifa total consultando microservicios en paralelo.
+    Si 'G' proviene de XM, se indica explícitamente.
+    Si falla, se usa el valor de respaldo del config.json.
     """
     try:
         logger.info("🚀 Iniciando cálculo automático (modo producción)...")
 
-        # 1️⃣ Consultar todos los componentes en paralelo
         componentes = await obtener_componentes_en_paralelo()
+        valor_G_final = None
+        fuente_G = None
+        comentario_G = None
+        mensaje = None
 
-        # 2️⃣ Reemplazar G con el valor real de XM si existe
-        valor_g_xm = await obtener_valor_generacion_xm()
-        if valor_g_xm is not None:
-            logger.info(f"🔄 Reemplazando 'generacion' ({componentes.get('generacion')}) por {valor_g_xm}")
-            componentes["generacion"] = valor_g_xm
+        # ==========================================================
+        # 🌐 Intentar obtener G desde el microservicio de generación (API XM)
+        # ==========================================================
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                logger.info("🌐 Consultando valor G desde http://generacion:8001/generacion/precio-xm ...")
+                r = await client.get("http://generacion:8001/generacion/precio-xm")
+
+                if r.status_code == 200:
+                    data = r.json()
+                    valor_G_api = float(data.get("valor_kWh", 0))
+                    fuente_G_api = data.get("fuente", "XM")
+
+                    # Validar si el valor obtenido es real (>0)
+                    if valor_G_api > 0:
+                        valor_G_final = valor_G_api
+                        fuente_G = fuente_G_api
+                        componentes["G"] = valor_G_final
+                        logger.info(f"✅ Valor G obtenido correctamente desde {fuente_G}: {valor_G_final}")
+                    else:
+                        logger.warning("⚠️ API XM respondió 200 pero sin datos válidos.")
+        except Exception as e:
+            logger.warning(f"⚠️ Error al consultar G desde XM: {e}")
+
+        # ==========================================================
+        # 🔁 Si no se obtuvo valor válido desde XM → usar respaldo local
+        # ==========================================================
+        if valor_G_final is None:
+            valor_G_final = componentes.get("G", 0)
+            fuente_G = "Respaldo local (config.json)"
+            logger.info(f"🔁 API XM no disponible, usando valor de respaldo: {valor_G_final}")
+
+        # ==========================================================
+        # 💬 Ajuste de mensajes según fuente de G
+        # ==========================================================
+        if str(fuente_G).lower().startswith("xm"):
+            mensaje = "✅ Cálculo automático completado con G obtenido desde API XM"
+            comentario_G = (
+                f"✅ G obtenido correctamente desde la fuente '{fuente_G}' "
+                f"con valor {valor_G_final} $/kWh"
+            )
         else:
-            logger.info("🟡 Se mantiene valor de respaldo en 'generacion' (XM no disponible).")
+            mensaje = "⚠️ Cálculo automático completado con G desde respaldo local (config.json)"
+            comentario_G = (
+                f"⚠️ API XM no disponible o sin datos válidos. "
+                f"Se utilizó el valor de respaldo {valor_G_final} $/kWh desde config.json"
+            )
 
-        # 3️⃣ Calcular totales
+        # ==========================================================
+        # 💰 Cálculo de tarifa total
+        # ==========================================================
         total_tarifa = sum(componentes.values())
         total_costo = redondear(total_tarifa * consumo_kWh, 2)
+        logger.info(f"💰 Tarifa total = {total_tarifa} | Costo = {total_costo}")
 
-        logger.info(f"💰 Tarifa total = {total_tarifa} | Costo total = {total_costo}")
+        # ==========================================================
+        # 🧾 Estructurar respuesta final
+        # ==========================================================
+        componentes_detalle = dict(componentes)
+        componentes_detalle["G_valor"] = valor_G_final
+        componentes_detalle["G_fuente"] = fuente_G
+        componentes_detalle["G_comentario"] = comentario_G
 
-        return respuesta_estandar(True, "Cálculo automático con G desde XM", {
-            "componentes": componentes,
+        # ==========================================================
+        # ✅ Respuesta estándar
+        # ==========================================================
+        return respuesta_estandar(True, mensaje, {
+            "componentes": componentes_detalle,
             "tarifa_total_$por_kWh": redondear(total_tarifa, 2),
             "consumo_kWh": consumo_kWh,
             "costo_total_$": total_costo,
-            "fuente_G": "XM" if valor_g_xm is not None else "Respaldo local"
+            "fuente_G": fuente_G
         })
 
     except Exception as e:
-        logger.exception("💥 Error crítico en cálculo automático:")
+        logger.exception("Error crítico en cálculo automático:")
         return respuesta_estandar(False, f"Error interno: {str(e)}", {})
 
 
-# ============================================================
-# 🔹 Cálculo manual (sincrónico)
-# ============================================================
+# ==========================================================
+# 🔹 CÁLCULO MANUAL (DEBUG Y PRUEBAS)
+# ==========================================================
 def calcular_tarifa_total(componentes: Dict[str, float], consumo_kWh: float) -> Dict:
     """
-    Modo manual — versión estable con logs.
+    Cálculo manual de tarifa total — versión estable con logs.
     """
     try:
         total_tarifa = sum(componentes.values())
@@ -97,7 +123,6 @@ def calcular_tarifa_total(componentes: Dict[str, float], consumo_kWh: float) -> 
             "consumo_kWh": consumo_kWh,
             "costo_total_$": total_costo
         })
-
     except Exception as e:
         logger.exception("Error en cálculo manual:")
         return respuesta_estandar(False, f"Error: {str(e)}", {})

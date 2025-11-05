@@ -1,4 +1,3 @@
-# core/xm_api.py
 import httpx
 from datetime import date, timedelta
 from core.calculadora import cargar_configuracion
@@ -73,6 +72,7 @@ def _pick_metric_precio_bolsa(metricas: list):
 async def obtener_precio_bolsa_xm():
     """
     Obtiene el Precio Bolsa Nacional Diario desde XM, retrocediendo días si el resultado viene vacío.
+    Devuelve una tupla (valor, fuente), donde la fuente puede ser 'XM' o 'Respaldo local (config.json)'.
     """
     try:
         print("🚀 Iniciando consulta del Precio Bolsa Nacional a XM...")
@@ -97,7 +97,6 @@ async def obtener_precio_bolsa_xm():
 
             resp_json = await _post("/daily", payload)
             items = resp_json.get("Items") or []
-
             print(f"🧠 Datos XM recibidos: {len(items)} items")
 
             for item in reversed(items):
@@ -118,10 +117,12 @@ async def obtener_precio_bolsa_xm():
         if valor is None:
             raise RuntimeError("No se pudo extraer valor del Precio Bolsa desde XM en los últimos 5 días")
 
-        return float(valor)
+        # 💡 Si llegó aquí, significa que se obtuvo correctamente desde XM
+        return float(valor), "XM"
 
     except Exception as e:
         print(f"❌ Error al obtener PBND desde XM: {e}")
         print("🔁 Usando valor de respaldo desde configuración local...")
         cfg = cargar_configuracion()
-        return float(cfg.get("tarifas", {}).get("generacion", {}).get("valor_kWh", 320.5))
+        valor_respaldo = float(cfg.get("tarifas", {}).get("generacion", {}).get("valor_kWh", 320.5))
+        return valor_respaldo, "Respaldo local (config.json)"
