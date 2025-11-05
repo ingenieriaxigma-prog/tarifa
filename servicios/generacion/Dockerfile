@@ -1,9 +1,13 @@
 FROM tarifa-electrica-base
 
 WORKDIR /app
+ENV PYTHONPATH=/app:/app/core
 
-# Copia el código fuente del microservicio
+# Copia los archivos del microservicio
 COPY ./servicios/generacion /app
+
+# 🔹 Copia la carpeta "config" general para acceder a normativa_config.json
+COPY ./config /app/config
 
 EXPOSE 8001
 

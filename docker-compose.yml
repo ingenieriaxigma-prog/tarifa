@@ -68,6 +68,8 @@ services:
       - perdidas_reconocidas
       - restricciones
       - comercializacion
+    volumes:
+      - ./config:/app/config   # 👈 NUEVA LÍNEA: monta el archivo normativa_config.json
     networks:
       - microservicios
 

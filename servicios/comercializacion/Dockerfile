@@ -1,6 +1,7 @@
 FROM tarifa-electrica-base
 
 WORKDIR /app
+ENV PYTHONPATH=/app:/app/core
 COPY ./servicios/comercializacion /app
 
 EXPOSE 8006

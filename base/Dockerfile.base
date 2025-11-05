@@ -1,11 +1,20 @@
+# ---------- Imagen base para todos los microservicios de Tarifa Eléctrica ----------
 FROM python:3.11-slim
 
+# Evita mensajes interactivos y mejora compatibilidad
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Carpeta de trabajo
 WORKDIR /app
 
-# Copiamos el core y la configuración común
+# Copiamos el core y la configuración común (para que todos los servicios la usen)
 COPY ./core /app/core
 COPY ./config /app/config
+COPY ./requirements.txt /app/requirements.txt
 
-# Instalamos dependencias básicas (se pueden agregar luego)
-RUN pip install --no-cache-dir fastapi uvicorn httpx tenacity
+# Instalamos dependencias comunes
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
+# Comando por defecto (se puede sobrescribir en cada servicio)
+CMD ["bash"]
