@@ -39,7 +39,7 @@ Los componentes se comunican de forma **asíncrona vía HTTP interno**, y el ser
 ├── servicios/
 │   ├── generacion/      # Cálculo G - Integrado con XM
 │   ├── transmision/     # Cálculo T - Implementación profesional
-│   ├── distribucion/    # (En procceso)
+│   ├── distribucion/    # (Calculo por entrono local)
 │   ├── perdidas_reconocidas/
 │   ├── restricciones/
 │   ├── comercializacion/
