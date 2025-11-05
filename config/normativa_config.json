@@ -25,6 +25,23 @@
             "valor_kWh": 22.5,
             "descripcion": "Costo por servicios comerciales del operador"
         }
+    },
+
+    "componente_T": {
+        "cargos_por_nivel": {
+            "1": 0.015,
+            "2": 0.018,
+            "3": 0.021,
+            "4": 0.025
+        },
+        "factor_geografico": {
+            "costa": 1.00,
+            "andina": 1.00
+        },
+        "recargo_horario": {
+            "pico": 1.00,
+            "valle": 1.00,
+            "llano": 1.00
+        }
     }
 }
-
